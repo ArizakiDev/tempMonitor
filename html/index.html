@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Statut du Serveur</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+    <style>
+        :root {
+            --bg-dark: #1a1b1e;
+            --card-bg: #2a2b2e;
+            --text-primary: #e9ecef;
+            --text-secondary: #adb5bd;
+            --accent-blue: #3a86ff;
+            --accent-green: #38b000;
+            --accent-yellow: #ffbe0b;
+            --accent-red: #ff006e;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 20px 0;
+        }
+
+        .metric-card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .metric-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+            border-color: var(--accent-blue);
+        }
+
+        .metric-value {
+            font-size: 2.8rem;
+            font-weight: bold;
+            background: linear-gradient(45deg, var(--accent-blue), #60a5fa);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 15px 0;
+        }
+
+        .metric-label {
+            color: var(--text-secondary);
+            font-size: 1.2rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+        }
+
+        .progress {
+            height: 12px;
+            border-radius: 6px;
+            background-color: rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+            margin-top: 15px;
+        }
+
+        .progress-bar {
+            transition: width 0.5s ease-in-out;
+        }
+
+        .progress-bar.bg-success { background: var(--accent-green) !important; }
+        .progress-bar.bg-warning { background: var(--accent-yellow) !important; }
+        .progress-bar.bg-danger { background: var(--accent-red) !important; }
+
+        .temperature-item {
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 10px;
+            background-color: rgba(255, 255, 255, 0.05);
+            transition: all 0.2s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .temperature-item:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .error-message {
+            color: var(--accent-red);
+            padding: 20px;
+            border-radius: 15px;
+            background-color: rgba(255, 0, 110, 0.1);
+            border: 1px solid rgba(255, 0, 110, 0.2);
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .loading {
+            animation: pulse 1.5s infinite;
+            color: var(--accent-blue);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 2rem;
+            text-align: center;
+            background: linear-gradient(135deg, var(--accent-blue), #60a5fa);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .refresh-indicator {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--card-bg);
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            opacity: 0.8;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .glow {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, var(--accent-blue) 0%, transparent 70%);
+            opacity: 0.1;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container my-5">
+        <div class="glow"></div>
+        <h1>Statut du Serveur</h1>
+        <div id="status" class="row">
+            <div class="col-12 text-center">
+                <div class="spinner-border text-primary loading" role="status">
+                    <span class="visually-hidden">Chargement...</span>
+                </div>
+            </div>
+        </div>
+        <div class="refresh-indicator">
+            Actualisation automatique toutes les 5 secondes
+        </div>
+    </div>
+
+    <script>
+        function getProgressBarColor(value) {
+            if (value < 60) return 'bg-success';
+            if (value < 80) return 'bg-warning';
+            return 'bg-danger';
+        }
+
+        function formatValue(value) {
+            return value.toFixed(1).replace('.', ',');
+        }
+
+        async function fetchStatus() {
+            try {
+                const response = await fetch("IP|URL DU SITE");
+                const data = await response.json();
+                
+                const statusDiv = document.getElementById("status");
+                statusDiv.innerHTML = `
+                    <div class="col-md-4 mb-4">
+                        <div class="metric-card">
+                            <div class="metric-label">Utilisation CPU</div>
+                            <div class="metric-value">${formatValue(data.cpu_usage)}%</div>
+                            <div class="progress">
+                                <div class="progress-bar ${getProgressBarColor(data.cpu_usage)}" 
+                                     role="progressbar" 
+                                     style="width: ${data.cpu_usage}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-4">
+                        <div class="metric-card">
+                            <div class="metric-label">Utilisation RAM</div>
+                            <div class="metric-value">${formatValue(data.memory.percent)}%</div>
+                            <div class="progress">
+                                <div class="progress-bar ${getProgressBarColor(data.memory.percent)}" 
+                                     role="progressbar" 
+                                     style="width: ${data.memory.percent}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-4">
+                        <div class="metric-card">
+                            <div class="metric-label">Températures</div>
+                            <div class="temperature-list">
+                                ${data.temperature.map(t => `
+                                    <div class="temperature-item">
+                                        <span class="fw-bold">${t.label}</span>
+                                        <span class="temperature-value">
+                                            ${t.current !== null ? formatValue(t.current) + "°C" : "Non disponible"}
+                                        </span>
+                                    </div>
+                                `).join("")}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } catch (error) {
+                console.error("Erreur lors de la récupération du statut:", error);
+                document.getElementById("status").innerHTML = `
+                    <div class="col-12">
+                        <div class="error-message">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Erreur lors de la récupération du statut du serveur. Veuillez réessayer plus tard.
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        fetchStatus();
+        setInterval(fetchStatus, 5000);
+    </script>
+</body>
+</html>
